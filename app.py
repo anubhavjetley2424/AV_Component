@@ -426,114 +426,13 @@ app.layout = dbc.Container(
         html.H3('Lidar Localisation', style={'color': 'orange'}),
         html.Br(),
 
-        dbc.Card(dbc.Row([dbc.Col(c) for c in controls], form=True), body=True),
-        html.Br(),
-        dbc.Card(dbc.FormGroup(
-        [
-            dbc.Label("Scene Selection", style={'padding-left':'15px', 'font-size':'30px'}),
-            dbc.RadioItems(
-                id="scene-selection",
-                value="0",
-                options=[
-                    {"label": unsnake(x), "value": x}
-                    for x in ["0", "1", "2","3", "4", "5", "6", "7", "8", "9"]
-                ],
-                inline=True, 
-                style={'padding-left':'15px'}
-            ),
-        ])),
-        html.Br(),
-        dbc.Row(
-            [    
-                html.Br(),
-                dbc.Col(dbc.Card(dcc.Graph(id="graph-camera"), body=True, style={'width':'780px', 'height':'500px'}), md=5),
-                dbc.Col(deck_card, md=7),
-            ]
-        ),
-        dcc.Store(id="sample-token", data=INITIAL_TOKEN),
-    ],
-    fluid=True,
-)
-
-
-curr_progress_list = [0]
-
-def update_current_token():
-    ctx = dash.callback_context
-    prop_id = ctx.triggered[0]["prop_id"]
-    curr_progress = curr_progress_list[-1]
-   
-    curr_progress_list.append(curr_progress + 1)
-    return curr_progress + 1
-    if "next" in prop_id:
-     return curr_progress + 1
-    if "prev" in prop_id:
-        return max(0, int(curr_progress) - 1)
-    else:
-      return dash.no_update
-
-
-@app.callback(
-    [
-        Output("graph-camera", "figure"),
-        Output("deck-pointcloud", "data"),
-        Output("button-group", "children"),
-        Output("progression", "type"),
-    ],
-    [
-        Input("progression", "value"),
-        Input("camera", "value"),
-        Input("lidar", "value"),
        
-        Input("view-mode", "value"),
-        Input("scene-selection", "value")
-    ],
-)
-def update_graphs(progression, camera, lidar, view_mode, scene_selection):
-    
-    scene = lv5.scene[int(scene_selection)]
-    token_list = get_token_list(scene)
-    INITIAL_TOKEN = scene["first_sample_token"]
-    last_token = scene['last_sample_token']
-    current_token = INITIAL_TOKEN
-    progression = update_current_token()
-    token = token_list[int(progression)]
-    
-  
-     
-    sample = lv5.get("sample", token)
-    pointsensor_token = sample["data"][lidar]
-    pointsensor = lv5.get("sample_data", pointsensor_token)
-    pc = LidarPointCloud.from_file(lv5.data_path / pointsensor["filename"])
-    pc_df = pd.DataFrame(pc.points.T, columns=["x", "y", "z", "intensity"])
 
-    
 
-    _, boxes, camera_intrinsic = lv5.get_sample_data(
-        pointsensor["token"], flat_vehicle_coordinates=False
-    )
-    overlay = 'boxes'
-    
-    polygon_data = [
-        {
-            "name": box.name,
-            "polygon": box.bottom_corners().T.tolist(),
-            "width": box.wlh[0],
-            "length": box.wlh[1],
-            "elevation": box.wlh[2],
-            "color": NAME2COLOR[box.name],
-            "token": box.token,
-            "distance": np.sqrt(np.square(boxes[0].center).sum()),
-        }
-        for box in boxes
-    ]
 
-     # Build figure and pydeck object
-    fig = build_figure(lv5, sample, lidar, camera, overlay)
-    r = build_deck(view_mode, pc_df, polygon_data)
-   
-    
-    return fig, r.to_json(), dash.no_update, dash.no_update
+
+
+
 
 
 if __name__ == "__main__":
